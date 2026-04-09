@@ -74,4 +74,54 @@
 
         function updateUI() {
             balEl.innerText = Math.floor(coins).toLocaleString();
-            
+            enValEl.innerText = `${energy} / ${maxEnergy}`;
+            enFillEl.style.width = (energy / maxEnergy * 100) + '%';
+            upgPriceEl.innerText = upgPrice;
+            localStorage.setItem('coins', coins);
+            localStorage.setItem('energy', energy);
+            localStorage.setItem('clickPower', clickPower);
+            localStorage.setItem('upgPrice', upgPrice);
+        }
+
+        // Клик
+        document.getElementById('coinBtn').addEventListener('click', (e) => {
+            if (energy >= clickPower) {
+                coins += clickPower;
+                energy -= clickPower;
+                
+                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+                // Анимация +1
+                const plus = document.createElement('div');
+                plus.innerText = `+${clickPower}`;
+                plus.className = 'plus-one';
+                plus.style.left = e.clientX + 'px';
+                plus.style.top = e.clientY + 'px';
+                document.body.appendChild(plus);
+                setTimeout(() => plus.remove(), 700);
+
+                updateUI();
+            }
+        });
+
+        // Пассивный доход и восстановление энергии
+        setInterval(() => {
+            coins += 0.1; // +1 монета каждые 10 сек пассивно
+            if (energy < maxEnergy) energy += 1;
+            updateUI();
+        }, 1000);
+
+        // Улучшение
+        window.upgradeClick = function() {
+            if (coins >= upgPrice) {
+                coins -= upgPrice;
+                clickPower++;
+                upgPrice = Math.floor(upgPrice * 1.5);
+                updateUI();
+            }
+        };
+
+        updateUI();
+    </script>
+</body>
+</html>
