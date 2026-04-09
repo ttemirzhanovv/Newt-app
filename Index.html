@@ -3,46 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Newt Clicker Pro</title>
+    <title>NewtClicker Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { 
-            background: radial-gradient(circle, #2c3e50, #000000); 
-            color: white; text-align: center; font-family: 'Segoe UI', sans-serif;
-            height: 100vh; overflow: hidden; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #1a1a1a, #000); 
+            color: white; text-align: center; font-family: 'Arial', sans-serif;
+            height: 100vh; overflow: hidden; margin: 0; display: flex; flex-direction: column; align-items: center; 
         }
-        .score-container { font-size: 50px; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 20px #f1c40f; }
+        .header { margin-top: 40px; }
+        .score { font-size: 55px; font-weight: 900; color: #f1c40f; text-shadow: 0 0 20px rgba(241, 196, 15, 0.4); }
+        .passive { color: #2ecc71; font-size: 16px; margin-top: -5px; }
+        
+        .coin-section { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; }
         .coin-btn { 
-            width: 250px; height: 250px; border-radius: 50%; 
-            background: url('https://cdn-icons-png.flaticon.com/512/5434/5434403.png'); /* Иконка золотой монеты */
-            background-size: cover; border: none; cursor: pointer;
-            transition: transform 0.1s active; box-shadow: 0 0 50px rgba(241, 196, 15, 0.2);
+            width: 280px; height: 280px; border-radius: 50%; 
+            background: url('https://cdn-icons-png.flaticon.com/512/5434/5434403.png') center/cover;
+            border: none; outline: none; transition: transform 0.05s;
+            box-shadow: 0 0 50px rgba(241, 196, 15, 0.2);
+            -webkit-tap-highlight-color: transparent;
         }
-        .coin-btn:active { transform: scale(0.9); }
-        .stat { font-size: 18px; color: #bdc3c7; margin-top: 10px; }
+        .coin-btn:active { transform: scale(0.92); }
+
+        .energy-section { width: 80%; margin-bottom: 40px; }
+        .energy-text { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; }
+        .energy-bar { width: 100%; height: 12px; background: #333; border-radius: 10px; overflow: hidden; }
+        .energy-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #f1c40f, #e67e22); transition: width 0.2s; }
+
+        .plus-one { position: absolute; color: #f1c40f; font-size: 35px; font-weight: 900; pointer-events: none; animation: float 0.7s ease-out forwards; }
+        @keyframes float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-120px); } }
+        
+        .upgrade-btn { background: #2c3e50; border: none; color: white; padding: 10px 20px; border-radius: 12px; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="stat">Твой баланс:</div>
-    <div class="score-container" id="balance">0</div>
-    <button class="coin-btn" onclick="clickCoin()"></button>
-    <div class="stat">Кликай, чтобы разбогатеть!</div>
+    <div class="header">
+        <div class="score" id="balance">0</div>
+        <div class="passive" id="passive-income">+1 / сек</div>
+    </div>
+
+    <div class="coin-section" id="wrapper">
+        <button class="coin-btn" id="coinBtn"></button>
+    </div>
+
+    <div class="energy-section">
+        <div class="energy-text">
+            <span>⚡ Энергия</span>
+            <span id="energy-val">1000 / 1000</span>
+        </div>
+        <div class="energy-bar"><div class="energy-fill" id="energy-fill"></div></div>
+        <button class="upgrade-btn" onclick="upgradeClick()">💪 Прокачать клик (Цена: <span id="upg-price">100</span>)</button>
+    </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        tg.MainButton.setText("ВЫВЕСТИ ДЕНЬГИ (СКОРО)").show();
+        tg.MainButton.setText("ВЫВЕСТИ СРЕДСТВА").show();
 
-        // Загружаем монеты из памяти
-        let count = parseInt(localStorage.getItem('coins')) || 0;
-        document.getElementById('balance').innerText = count;
+        // Данные
+        let coins = parseInt(localStorage.getItem('coins')) || 0;
+        let energy = parseInt(localStorage.getItem('energy')) || 1000;
+        let clickPower = parseInt(localStorage.getItem('clickPower')) || 1;
+        let upgPrice = parseInt(localStorage.getItem('upgPrice')) || 100;
+        const maxEnergy = 1000;
 
-        function clickCoin() {
-            count++;
-            document.getElementById('balance').innerText = count;
-            localStorage.setItem('coins', count); // Сохраняем в память телефона
-            if (navigator.vibrate) navigator.vibrate(40);
-        }
-    </script>
-</body>
-</html>
+        const balEl = document.getElementById('balance');
+        const enValEl = document.getElementById('energy-val');
+        const enFillEl = document.getElementById('energy-fill');
+        const upgPriceEl = document.getElementById('upg-price');
+
+        function updateUI() {
+            balEl.innerText = Math.floor(coins).toLocaleString();
+            
