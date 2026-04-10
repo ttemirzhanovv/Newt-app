@@ -1,125 +1,41 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Newt Combat Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://app.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f171e; color: white; text-align: center; margin: 0; overflow: hidden; user-select: none; }
-        #score { font-size: 60px; font-weight: bold; color: #00ffd5; margin-top: 20px; text-shadow: 0 0 15px #00ffd566; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0b10; color: white; text-align: center; margin: 0; overflow: hidden; user-select: none; }
+        #score { font-size: 60px; font-weight: bold; margin-top: 20px; color: #00ffd4; text-shadow: 0 0 20px rgba(0,255,212,0.5); }
+        
         #click-circle {
-            width: 220px; height: 220px; border: 6px solid #00ffd5; border-radius: 50%;
-            margin: 30px auto; display: flex; align-items: center; justify-content: center;
-            background: radial-gradient(circle, #1b2735 0%, #0f171e 100%);
-            box-shadow: 0 0 25px #00ffd544; transition: transform 0.05s; position: relative;
+            width: 240px; height: 240px; border-radius: 50%; border: 8px solid #00ffd4;
+            margin: 40px auto; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #1a1c25 0%, #0a0b10 100%);
+            box-shadow: 0 0 40px #00ffd444; cursor: pointer; transition: transform 0.1s;
         }
         #click-circle:active { transform: scale(0.95); }
-        #newt-img { width: 85%; pointer-events: none; }
-        .stats { font-size: 14px; margin-bottom: 5px; opacity: 0.8; }
-        #energy-container { width: 80%; height: 10px; background: #222; margin: 0 auto 20px; border-radius: 5px; border: 1px solid #00ffd533; }
-        #energy-bar { width: 100%; height: 100%; background: #00ffd5; border-radius: 5px; transition: width 0.2s; }
-        .menu { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-        button { width: 85%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
-        .btn-upg { background: #00ffd5; color: #0f171e; }
-        .btn-ads { background: #f1c40f; color: #0f171e; }
-        .btn-share { background: #3498db; color: white; }
-        .floating-text { position: absolute; color: #00ffd5; font-size: 32px; font-weight: bold; pointer-events: none; animation: floatUp 0.7s ease-out forwards; }
-        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
+        #newt-img { width: 80%; pointer-events: none; }
+
+        .stats { font-size: 16px; margin: 10px; color: #aaa; }
+        #energy-container { width: 80%; height: 12px; background: #222; margin: 10px auto; border-radius: 10px; overflow: hidden; }
+        #energy-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #ffcc00, #ffea00); transition: width 0.3s; }
+
+        .btn {
+            width: 85%; padding: 15px; margin: 10px auto; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: bold; cursor: pointer; display: block; transition: 0.3s;
+        }
+        #upgrade-btn { background: #00ffd4; color: #000; }
+        #ad-btn { background: #ffcc00; color: #000; }
+        #share-btn { background: #3399ff; color: #fff; }
+        
+        .btn:disabled { background: #444 !important; color: #888; cursor: not-allowed; }
     </style>
 </head>
 <body>
+
     <div id="score">0</div>
-    <div id="click-circle" onclick="clickNewt(event)">
-        <img src="newt.png" id="newt-img" alt="🦎">
-    </div>
-    <div class="stats">⚡ Энергия: <span id="energy">1000</span>/1000</div>
-    <div id="energy-container"><div id="energy-bar"></div></div>
-    <div class="menu">
-        <button class="btn-upg" onclick="upgrade()">💪 Качать (+<span id="pwr">2</span>) — <span id="cost">100</span></button>
-        <button class="btn-ads" onclick="showAd()">📺 Реклама (+500 очков)</button>
-        <button class="btn-share" onclick="share()">🔗 Поделиться (Трафик)</button>
-    </div>
-
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-
-        let score = parseInt(localStorage.getItem('score')) || 0;
-        let power = parseInt(localStorage.getItem('power')) || 2;
-        let energy = 1000;
-
-        // Инициализация рекламы
-        let AdController = null;
-        if (window.Adsgram) {
-            AdController = window.Adsgram.init({ blockId: "27337" });
-        }
-
-        function clickNewt(e) {
-            if (energy >= power) {
-                score += power;
-                energy -= power;
-                createFloat(e.clientX, e.clientY, '+' + power);
-                updateUI();
-                saveData();
-            }
-        }
-
-        function createFloat(x, y, text) {
-            const el = document.createElement('div');
-            el.className = 'floating-text';
-            el.innerText = text;
-            el.style.left = x - 20 + 'px';
-            el.style.top = y - 40 + 'px';
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 700);
-        }
-
-        function upgrade() {
-            let price = power * 50;
-            if (score >= price) {
-                score -= price;
-                power++;
-                updateUI();
-                saveData();
-            }
-        }
-
-        function showAd() {
-            if (!window.Adsgram) return alert("Рекламная сеть не подгрузилась...");
-            if (!AdController) AdController = window.Adsgram.init({ blockId: "27337" });
-            
-            AdController.show().then(() => {
-                score += 500;
-                updateUI();
-                saveData();
-            }).catch(() => {
-                alert("Реклама еще загружается или недоступна. Попробуйте снова через минуту!");
-            });
-        }
-
-        function share() {
-            const url = "https://t.me/NewtClicker_bot/App";
-            const text = "Тут Тритон раздает монеты! Заходи в мой кликер 🦎";
-            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`);
-        }
-
-        function updateUI() {
-            document.getElementById('score').innerText = score.toLocaleString();
-            document.getElementById('energy').innerText = energy;
-            document.getElementById('energy-bar').style.width = (energy / 10) + '%';
-            document.getElementById('pwr').innerText = power;
-            document.getElementById('cost').innerText = (power * 50);
-        }
-
-        function saveData() {
-            localStorage.setItem('score', score);
-            localStorage.setItem('power', power);
-        }
-
-        setInterval(() => { if (energy < 1000) { energy = Math.min(1000, energy + 5); updateUI(); } }, 1000);
-        updateUI();
-    </script>
-</body>
-</html>
+    <div class="stats">Сила клика: +<span id="power">1</span></div>
+    
